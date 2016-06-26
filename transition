@@ -2,9 +2,37 @@
 #define EXT_TRANSITION_
 
 /* EXT C++ Library
-// transition
+// using linear interpolation and given X value computes Y value on a chart
+// described by sorted list of [X,Y] coordinates
 //
 // Author: Jan Ringos, jan@ringos.cz
+//
+// Supports computing transition in:
+//  - classic arrays of known bound
+//  - std::array, std::tupple and std::pair (anything that overloads std::get)
+// 
+// NOTE: The XN-th (usually on index zero) column must be sorted!
+//
+// Example:
+//    const std::pair <float, float> glowing [] = {
+//        { 0.0f, 0.0f },
+//        { 0.7f, 0.2f },
+//        { 1.1f, 1.0f },
+//        { 1.8f, 1.0f },
+//        { 2.0f, 0.0f },
+//    };
+//    glow = ext::transition (glowing, time);
+//
+// Example:
+//    const std::array <float, 4> colorization [] = {
+//        { 0.0f, 0.0f, 0.0f, 0.0f },
+//        { 0.5f, 1.0f, 0.7f, 0.5f },
+//        { 1.0f, 1.0f, 1.0f, 1.0f },
+//        { 2.0f, 0.0f, 0.2f, 1.0f },
+//    };
+//    r = ext::transition <0, 1> (colorization, time);
+//    g = ext::transition <0, 2> (colorization, time);
+//    b = ext::transition <0, 3> (colorization, time);
 */
 
 #include <array>
@@ -17,8 +45,7 @@ namespace ext {
     
     // transition
     //  - computes Y transition from range of iterators to pairs/tupples/arrays
-    //    where X values are stored in XN-th (first by default) member, and
-    //    Yvalues
+    //    where X values are stored in XN-th (first by default) member
 
     template <typename T, std::size_t XN = 0, std::size_t YN = 1, typename I>
     typename std::tuple_element <YN, T> ::type
@@ -42,7 +69,7 @@ namespace ext {
     };
     
     // transition
-    //  - this version works over static array or pairs/tupples/arrays
+    //  - this version works over static array of pairs/tupples/arrays
     
     template <std::size_t XN = 0, std::size_t YN = 1,
               typename T, std::size_t N>
