@@ -1,0 +1,33 @@
+#ifndef EXT_EXPLODE_
+#define EXT_EXPLODE_
+
+/* EXT C++ Library
+// explode; splits string by substring into a vector
+//
+// Author: Jan Ringos, jan@ringos.cz
+*/
+
+#include <string>
+#include <vector>
+#include <algorithm>
+
+namespace ext {
+    
+    template <typename T, typename U>
+    std::vector <T> explode (const T & s, const U & m) {
+        std::vector <T> r;
+//        r.reserve (std::count (s.begin (), s.end (), m) + 1u);
+        
+        typename T::size_type ob = 0u;
+        typename T::size_type oe = 0u;
+        
+        while ((oe = s.find (m, ob)) != T::npos) {
+            r.push_back (s.substr (ob, oe - ob));
+            ob = oe + 1;
+        };
+        r.push_back (s.substr (ob));
+        return r;
+    };
+};
+
+#endif

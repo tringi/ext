@@ -1,0 +1,57 @@
+#ifndef EXT_TRANSITION_
+#define EXT_TRANSITION_
+
+/* EXT C++ Library
+// transition
+//
+// Author: Jan Ringos, jan@ringos.cz
+*/
+
+#include <array>
+#include <tuple>
+#include <utility>
+#include <algorithm>
+#include "interpolation"
+
+namespace ext {
+    
+    // transition
+    //  - computes Y transition from range of iterators to pairs/tupples/arrays
+    //    where X values are stored in XN-th (first by default) member, and
+    //    Yvalues
+
+    template <typename T, std::size_t XN = 0, std::size_t YN = 1, typename I>
+    typename std::tuple_element <YN, T> ::type
+    transition (I b, I e,
+                const typename std::tuple_element <XN, T> ::type & k) {
+        
+        const auto z = std::upper_bound (b, e, k,
+                                         [](const typename std::tuple_element <XN, T> ::type & kk, const T & v) {
+                                            return kk < std::get <XN> (v);
+                                         });
+        if (z == b)
+            return std::get <YN> (*b);
+        if (z == e)
+            return std::get <YN> (*(e - 1));
+        
+        const auto y = z - 1;
+        return ext::interpolation <typename std::tuple_element <XN, T> ::type,
+                                   typename std::tuple_element <YN, T> ::type>
+                                  (std::get <XN> (*y), std::get <XN> (*z),
+                                   std::get <YN> (*y), std::get <YN> (*z)) (k);
+    };
+    
+    // transition
+    //  - this version works over static array or pairs/tupples/arrays
+    
+    template <std::size_t XN = 0, std::size_t YN = 1,
+              typename T, std::size_t N>
+    typename std::tuple_element <YN, T> ::type
+    transition (const T (&data) [N],
+                const typename std::tuple_element <XN, T> ::type & k) {
+        
+        return ext::transition <T, XN, YN> (std::begin (data), std::end (data), k);
+    };
+};
+
+#endif

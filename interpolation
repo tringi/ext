@@ -1,0 +1,102 @@
+#ifndef EXT_INTERPOLATION_
+#define EXT_INTERPOLATION_
+
+/* EXT C++ Library
+// interpolation
+//
+// Author: Jan Ringos, jan@ringos.cz
+*/
+
+#include <type_traits>
+
+namespace ext {
+    
+    // wider_floating_point
+    //  - 
+    
+    template <typename T, typename S>
+    struct wider_floating_point { typedef long double type; };
+    
+    template <> struct wider_floating_point <float, float> { typedef float type; };
+    template <> struct wider_floating_point <float, double> { typedef double type; };
+    template <> struct wider_floating_point <double, float> { typedef double type; };
+    template <> struct wider_floating_point <double, double> { typedef double type; };
+    
+    
+    // interpolation_algorithm
+    //  - S - type of source coordinate
+    //  - T - type of target coordinate
+    //  - bool - true for specialized algorihm using precomputed coeficients
+    //           which can be used only for floating point types
+    
+    template <typename S, typename T, bool>
+    class interpolation_algorithm {
+        private:
+            S s;
+            S d;
+            T t;
+            T m;
+        
+        protected:
+            constexpr
+            interpolation_algorithm (const S & source_begin, const S & source_end,
+                                     const T & target_begin, const T & target_end)
+                :   s (source_begin),
+                    d (source_end - source_begin),
+                    t (target_begin),
+                    m (target_end - target_begin) {};
+
+            constexpr
+            T operator () (const S & value) const {
+                return (value - this->s) * this->m / this->d + this->t;
+            };
+    };
+
+    template <typename S, typename T>
+    class interpolation_algorithm <S, T, true> {
+        typedef typename wider_floating_point <S, T> ::type TT;
+        
+        private:
+            TT a;
+            TT b;
+
+        protected:
+            constexpr
+            interpolation_algorithm (const S & source_begin, const S & source_end,
+                                     const T & target_begin, const T & target_end)
+                :   a (  TT (target_end - target_begin)
+                       / TT (source_end - source_begin)),
+                    b (  TT (target_end - target_begin)
+                       * TT (source_begin)
+                       / TT (source_end - source_begin)
+                       - TT (target_begin)) {};
+
+            constexpr
+            T operator () (const S & value) const {
+                return value * this->a - this->b;
+            };
+    };
+    
+    // interpolation
+    //  - 
+
+    template <typename S, typename T>
+    class interpolation
+        : private interpolation_algorithm <S, T,
+                                           std::is_floating_point <S> ::value ||
+                                           std::is_floating_point <T> ::value> {
+        typedef interpolation_algorithm <S, T,
+                                         std::is_floating_point <S> ::value ||
+                                         std::is_floating_point <T> ::value> base;
+        public:
+            constexpr
+            interpolation (const S & source_begin, const S & source_end,
+                           const T & target_begin, const T & target_end)
+                :   base (source_begin, source_end,
+                          target_begin, target_end) {};
+    
+            using base::operator ();
+    };
+};
+
+#endif
