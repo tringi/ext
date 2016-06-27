@@ -43,43 +43,45 @@
 #include <cwchar>
 
 namespace ext {
+    namespace detail {
+        
+        // ext::detail::iterate_range
+        // ext::detail::iterate_range::proxy
+        //  - core of the ext::iterate functionality allows range-based for loop
+        //    to generate begin and end iterators (ext::iterate_range::proxy)
+        //    with required dereference, increment and compare-agains-end ops
     
-    // ext::iterate_range
-    // ext::iterate_range::proxy
-    //  - core of the ext::iterate functionality: allows range-based for loop
-    //    to generate begin and end iterators (ext::iterate_range::proxy) with
-    //    required dereference, increment and compare-agains-end operations
-
-    template <typename T>
-    struct iterate_range {
-        const T n;
-        
-        struct proxy {
-            T i;
-                
-            inline T operator * () const {
-                return this->i;
+        template <typename T>
+        struct iterate_range {
+            const T n;
+            
+            struct proxy {
+                T i;
+                    
+                inline T operator * () const {
+                    return this->i;
+                };
+                inline bool operator != (const proxy & other) const {
+                    return this->i != other.i;
+                };
+                inline void operator ++ () {
+                    ++this->i;
+                };
             };
-            inline bool operator != (const proxy & other) const {
-                return this->i != other.i;
-            };
-            inline void operator ++ () {
-                ++this->i;
-            };
+            
+            inline       proxy begin () const { return proxy {T {}};    };
+            inline const proxy   end () const { return proxy {this->n}; };
         };
-        
-        inline       proxy begin () const { return proxy {T {}};    };
-        inline const proxy   end () const { return proxy {this->n}; };
-    };
-
-    // ext::make_iterate_range
-    //  - helper function for deducing iteration variable type which is either:
-    //    std::size_t or return type of .size(), std::strlen or std::wcslen
-    //    function
-
-    template <typename T>
-    auto make_iterate_range (T n) {
-        return ext::iterate_range <T> {n};
+    
+        // ext::detail::make_iterate_range
+        //  - helper function to deduce iteration variable type that's either:
+        //    std::size_t or return type of .size(), std::strlen or std::wcslen
+        //    function
+    
+        template <typename T>
+        auto make_iterate_range (T n) {
+            return ext::detail::iterate_range <T> {n};
+        };
     };
     
     // ext::iterate
@@ -90,73 +92,75 @@ namespace ext {
     
     template <typename T, std::size_t N>
     auto iterate (const T (&) [N]) {
-        return ext::make_iterate_range (N);
+        return ext::detail::make_iterate_range (N);
     };
     template <typename T>
     auto iterate (const T & p) {
-        return ext::make_iterate_range (p.size ());
+        return ext::detail::make_iterate_range (p.size ());
     };
 
     auto iterate (const char * p) {
-        return ext::make_iterate_range (std::strlen (p));
+        return ext::detail::make_iterate_range (std::strlen (p));
     };
     auto iterate (const wchar_t * p) {
-        return ext::make_iterate_range (std::wcslen (p));
+        return ext::detail::make_iterate_range (std::wcslen (p));
     };
-    
 
-    // ext::dynamic_iterate_range_size
-    //  - helper function for ext::dynamic_iterate_range::proxy
-    //  - returns size of container or length of a string
+    namespace detail {    
     
-    template <typename U, typename T>
-    U dynamic_iterate_range_size (const T * c) { return c->size (); };
-
-    template <typename U>
-    U dynamic_iterate_range_size (const char * s) { return std::strlen (s); };
-
-    template <typename U>
-    U dynamic_iterate_range_size (const wchar_t * s) { return std::wcslen (s); };
-    
-    // ext::dynamic_iterate_range
-    // ext::dynamic_iterate_range::proxy
-    //  - core of the ext::dynamic_iterate functionality: allows range-based for
-    //    loop to generate begin and end iterators (proxy) that store index and
-    //    a way to evaluate current container size or string length
-    
-    template <typename T, typename U>
-    struct dynamic_iterate_range {
-        const T * c;
+        // ext::detail::dynamic_iterate_range_size
+        //  - helper function for ext::dynamic_iterate_range::proxy
+        //  - returns size of container or length of a string
         
-        struct proxy {
-            U i;
+        template <typename U, typename T>
+        U dynamic_iterate_range_size (const T * c) { return c->size (); };
+    
+        template <typename U>
+        U dynamic_iterate_range_size (const char * s) { return std::strlen (s); };
+    
+        template <typename U>
+        U dynamic_iterate_range_size (const wchar_t * s) { return std::wcslen (s); };
+        
+        // ext::detail::dynamic_iterate_range
+        // ext::detail::dynamic_iterate_range::proxy
+        //  - core of the ext::dynamic_iterate functionality: allows range-based for
+        //    loop to generate begin and end iterators (proxy) that store index and
+        //    a way to evaluate current container size or string length
+        
+        template <typename T, typename U>
+        struct dynamic_iterate_range {
             const T * c;
             
-            inline U operator * () const {
-                return this->i;
+            struct proxy {
+                U i;
+                const T * c;
+                
+                inline U operator * () const {
+                    return this->i;
+                };
+                inline bool operator != (const proxy &) const {
+                    return this->i != ext::detail::dynamic_iterate_range_size <U> (this->c);
+                };
+                inline void operator ++ () {
+                    ++this->i;
+                };
             };
-            inline bool operator != (const proxy &) const {
-                return this->i != ext::dynamic_iterate_range_size <U> (this->c);
-            };
-            inline void operator ++ () {
-                ++this->i;
-            };
+            
+            inline proxy begin () const { return proxy {U (), this->c}; };
+            inline proxy   end () const { return proxy {U (), nullptr}; };
         };
-        
-        inline proxy begin () const { return proxy {U (), this->c}; };
-        inline proxy   end () const { return proxy {U (), nullptr}; };
+    
+        // ext::detail::make_dynamic_iterate_range
+        //  - helper function for deducing iteration variable type which is either:
+        //    return type of .size(), std::strlen or std::wcslen
+        //    function
+    
+        template <typename T, typename U>
+        auto make_dynamic_iterate_range (const T * c, U) {
+            return ext::detail::dynamic_iterate_range <T, U> {c};
+        };
     };
-
-    // ext::make_dynamic_iterate_range
-    //  - helper function for deducing iteration variable type which is either:
-    //    return type of .size(), std::strlen or std::wcslen
-    //    function
-
-    template <typename T, typename U>
-    auto make_dynamic_iterate_range (const T * c, U) {
-        return ext::dynamic_iterate_range <T, U> {c};
-    };
-
+    
     // ext::dynamic_iterate
     //  - primary function to invoke dynamic iteration
     //  - parameter is container or string to iterate over
@@ -168,14 +172,14 @@ namespace ext {
     };
     template <typename T>
     auto dynamic_iterate (const T & c) {
-        return ext::make_dynamic_iterate_range (&c, c.size ());
+        return ext::detail::make_dynamic_iterate_range (&c, c.size ());
     };
 
     auto dynamic_iterate (const char * p) {
-        return ext::make_dynamic_iterate_range (p, std::strlen (p));
+        return ext::detail::make_dynamic_iterate_range (p, std::strlen (p));
     };
     auto dynamic_iterate (const wchar_t * p) {
-        return ext::make_dynamic_iterate_range (p, std::wcslen (p));
+        return ext::detail::make_dynamic_iterate_range (p, std::wcslen (p));
     };
 };
 
