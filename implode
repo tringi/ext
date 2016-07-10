@@ -1,0 +1,49 @@
+#ifndef EXT_IMPLODE_
+#define EXT_IMPLODE_
+
+/* EXT C++ Library
+// using += operator concatenates non-empty elements of a vector inserting
+// separator between elements
+//
+// Author: Jan Ringos, jan@ringos.cz
+//
+// Example:
+//    std::vector <std::string> in = { "", "", "AA", "", "BB", "CC, "" };
+//    assert (ext::implode (in, ", ") == "AA, BB, CC");
+*/
+
+#include <iterator>
+#include <vector>
+
+namespace ext {
+    
+    // implode
+    //  - concatenates (+=) elements of vector<T> into single T
+    //  - second parameter specifies separator
+    //  - TODO: other containers? raw arrays? using ranges?
+    //  - TODO: have 'm' default to T()
+    
+    template <typename T, typename U>
+    T implode (const std::vector <T> & s, const U & m) {
+        T r;
+        
+        auto si = std::begin (s);
+        auto se = std::end (s);
+        
+        for (; si != se; ++si)
+            if (!si->empty ()) {
+                r = *si++;
+                break;
+            };
+                
+        for (; si != se; ++si)
+            if (!si->empty ()) {
+                r += m;
+                r += *si;
+            };
+        
+        return r;
+    };
+};
+
+#endif

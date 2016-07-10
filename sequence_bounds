@@ -1,0 +1,52 @@
+#ifndef EXT_SEQUENCE_BOUNDS_
+#define EXT_SEQUENCE_BOUNDS_
+
+/* EXT C++ Library
+// sequence_bounds; finds all continous sequences of values, returns their bounds
+//
+// Author: Jan Ringos, jan@ringos.cz
+//
+// Example:
+//    std::set<int> in = { 11, 13, 12, 14,  8, 7, 9,  3, 1, 2,  22 }
+//    assert (ext::sequence_bounds (s) == std::set <std::pair <int, int>> { { 1, 3 }, { 7, 9 }, { 11, 14 }, { 22, 22 } });
+*/
+
+#include <iterator>
+#include <utility>
+#include <set>
+
+namespace ext {
+    
+    // sequence_bounds
+    //  - input: set of arbitrary integral numbers
+    //  - output: set of pairs determining continuous ranges of number on input
+    //            for solitary values first and second are the same
+    
+    template <typename T>
+    std::set <std::pair <T, T>> sequence_bounds (const std::set <T> & sequences) {
+        std::set <std::pair <T, T>> r;
+
+        auto b = std::begin (sequences);
+        auto e = std::end (sequences);
+        
+        if (b != e) {
+            auto i = b;
+            auto j = b;
+            
+            while (++i != e) {
+                if (*i != *j + 1) {
+                    r.insert (std::make_pair (*b, *j));
+                    b = i;
+                };
+                
+                ++j;
+            };
+            
+            r.insert (std::make_pair (*b, *j));
+        };
+        
+        return r;
+    };
+};
+
+#endif

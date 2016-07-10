@@ -1,0 +1,58 @@
+#ifndef EXT_BUFFER_
+#define EXT_BUFFER_
+
+/* EXT C++ Library
+// establishes buffer, transparently, on either stack or heap, based on size
+//
+// Author: Jan Ringos, jan@ringos.cz
+//
+// NOTE: this is incomplete implementation, usefull only for trivial purposes
+//
+// Example:
+//    ext::buffer <char> data (source.size ());
+//    source.recv (data, data.size); // void recv (char *, std::size_t);
+//    target.send (data, data.size); // void send (const char *, std::size_t);
+*/
+
+#include <cstddef>
+
+namespace ext {
+    
+    // buffer
+    //  - the buffer template
+    //  - SN - number of stack space to reserve
+    
+    template <typename C, std::size_t SN = 64u>
+    class buffer {
+        public:
+            const std::size_t size;
+        private:
+            union {
+                C * const     heap;
+                C             stack [SN];
+            };
+        public:
+            explicit buffer (std::size_t n)
+                :   size (n <= SN ? SN : n),
+                    heap (n <= SN ? NULL : new C [n]) {};
+            
+            // TODO: construct from buffer, range, string, etc
+            // TODO: copy and move
+            
+            ~buffer () {
+                if (this->size > SN) {
+                    delete [] this->heap;
+                };
+            };
+            
+        public:
+            operator C * () {
+                return (this->size <= SN) ? &this->stack[0] : this->heap;
+            };
+            operator const C * () const {
+                return (this->size <= SN) ? &this->stack[0] : this->heap;
+            };
+    };
+};
+
+#endif
