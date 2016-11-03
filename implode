@@ -13,37 +13,44 @@
 */
 
 #include <iterator>
-#include <vector>
 
 namespace ext {
-    
+
     // implode
-    //  - concatenates (+=) elements of vector<T> into single T
+    //  - concatenates (+=) non-empty elements in a container into single element
     //  - second parameter specifies separator
     //  - TODO: other containers? raw arrays? using ranges?
-    //  - TODO: have 'm' default to T()
-    
-    template <typename T, typename U>
-    T implode (const std::vector <T> & s, const U & m) {
-        T r;
-        
-        auto si = std::begin (s);
-        auto se = std::end (s);
-        
-        for (; si != se; ++si)
-            if (!si->empty ()) {
-                r = *si++;
+
+    template <typename Item, typename Iterator, typename Separator>
+    Item implode (Iterator i, Iterator e, Separator s) {
+        Item r;
+        // r.reserve (...);
+
+        for (; i != e; ++i)
+            if (!i->empty ()) {
+                r = *i++;
                 break;
             };
-                
-        for (; si != se; ++si)
-            if (!si->empty ()) {
-                r += m;
-                r += *si;
+
+        for (; i != e; ++i)
+            if (!i->empty ()) {
+                r += s;
+                r += *i;
             };
-        
+
         return r;
     };
+
+    template <typename T, typename U>
+    typename T::value_type implode (const T & s, const U & m = typename T::value_type ()) {
+        return implode <T::value_type> (std::begin (s), std::end (s), m);
+    };
+
+    template <typename T, std::size_t N, typename U>
+    T implode (T (&s) [N], const U & m = T ()) {
+        return implode <T> (std::begin (s), std::end (s), m);
+    };
+
 };
 
 #endif
