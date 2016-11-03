@@ -12,11 +12,42 @@
 #include <algorithm>
 
 namespace ext {
+    namespace detail {
+        
+        // explode_expectation
+        //  - efficiency detail
+        
+        template <typename T, typename U>
+        std::size_t explode_expectation (const T & s, const U & m) {
+            return 2u;
+        };
+        
+        // TODO: basic_string_view
+
+        template <typename C>
+        std::size_t explode_expectation (const std::basic_string <C> & s, const C & m) {
+            return std::count (s.begin (), s.end (), m) + 1u;
+        };
+
+        template <typename C>
+        std::size_t explode_expectation (const std::basic_string <C> & s, const std::basic_string <C> & m) {
+            std::basic_string <C> ::size_type n = 1;
+            std::basic_string <C> ::size_type i = -1;
+            
+            // while ((i = s.find (m, i) + 1u) != 0) {
+            while ((i = s.find (m, i + 1u)) != std::basic_string <C> ::npos) {
+                ++n;
+            };
+            
+            return n;
+        };
+
+    };
     
     template <typename T, typename U>
     std::vector <T> explode (const T & s, const U & m) {
         std::vector <T> r;
-//        r.reserve (std::count (s.begin (), s.end (), m) + 1u);
+        r.reserve (ext::detail::explode_expectation (s, m));
         
         typename T::size_type ob = 0u;
         typename T::size_type oe = 0u;
