@@ -1,0 +1,83 @@
+#ifndef EXT_TRIM_
+#define EXT_TRIM_
+
+/* EXT C++ Library
+// common trim, removes leading and trailing white-space characters from string
+//
+// Author: Jan Ringos, jan@ringos.cz
+//
+// Example:
+*/
+
+#include <string>
+#include <utility>
+
+namespace ext {
+    namespace detail {
+        namespace trim {
+
+            // whitespace
+            //  - 
+
+            template <typename C>
+            struct whitespace;
+
+            template <>
+            struct whitespace <char> {
+                constexpr char characters [] = " \t\v\f\r\n\0";
+            };
+            template <>
+            struct whitespace <wchar_t> {
+                constexpr wchar_t characters [] = L" \f\n\r\t\v\x1680\x180E\x2002\x2003\x2004\x2005"
+                                                  L"\x2006\x2007\x2008\x2009\x200A\x200B\x202F\x205F"
+                                                  L"\x2060\x3000\xFEFF\xFFFD\0";
+            };
+
+            // range
+            //  - determines the first position of the resulting string and its length
+            //  - both returned values are offsets into the input string
+
+            template <typename C>
+            std::pair <typename std::basic_string <C> ::size_type,
+                       typename std::basic_string <C> ::size_type>
+            range (const std::basic_string <C> & s) {
+
+                auto start = s.find_first_not_of (whitespace <C> ::characters, 0,
+                                                  sizeof whitespace <C> ::characters / sizeof (C));
+                auto length = s.find_last_not_of (whitespace <C> ::characters,
+                                                  std::basic_string <C>::npos,
+                                                  sizeof whitespace <C> ::characters / sizeof (C))
+                    - start + 1;
+
+                if (start != std::basic_string <C>::npos)
+                    return std::make_pair (start, length);
+                else
+                    return std::make_pair (0, 0);
+            };
+        };
+    };
+    
+    // trim
+    //  - removes leading and trailing white-space characters
+    //  - the 0xA0 (0x00A0 - Non-Breaking space) character is preserved
+    
+    template <typename C>
+    void trim (std::basic_string <C> & s) {
+        auto r = ext::detail::trim::range <C> (s);
+        s.erase (r.first + r.second);
+        s.erase (0, r.first);
+        return;
+    };
+    
+    // trimmed
+    //  - returns the string without leading and trailing white-space characters
+    //  - again, the 0xA0 (0x00A0 - Non-Breaking space) character is preserved
+    
+    template <typename C>
+    std::basic_string <C> trimmed (const std::basic_string <C> & s) {
+        auto r = ext::detail::trim::range <C> (s);
+        return std::basic_string <C> (s, r.first, r.second);
+    };
+};
+
+#endif
