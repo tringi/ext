@@ -73,7 +73,7 @@ namespace ext {
 
             constexpr
             T operator () (const S & value) const {
-                return value * this->a - this->b;
+                return T (value * this->a - this->b);
             };
     };
     
